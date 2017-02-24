@@ -1,2 +1,2 @@
-# pepper-object-recognition
-Internal and external service based object recognition mechanisms for the Pepper robot.
+# sparc-vision
+Internal and external service based object recognition mechanisms for the robots in the SPARC project (Pepper, Tiago).
