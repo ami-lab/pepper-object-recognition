@@ -14,6 +14,13 @@ class PepperImageProvider:
 		self.PORT = PORT
 		self.FPS = FPS
 		self.connected = False
+		self.imagesCounter = 0
+
+	def getImagesCounter(self):
+		return self.imagesCounter
+
+	def reset(self):
+		self.imagesCounter = 0
 
 	def connect(self):
 		self.camProxy = ALProxy("ALVideoDevice", self.IP, self.PORT)
@@ -27,16 +34,9 @@ class PepperImageProvider:
 			raise Exception('Al Proxy not initialized.!') 
 		# Get a camera image.
 		# image[6] contains the image data passed as an array of ASCII chars.
-		t0 = time.time()
 		naoImage = self.camProxy.getImageRemote(self.videoClient)
 
-		t1 = time.time()
-
-		# Time the image transfer.
-		print "acquisition delay ", t1 - t0
-		# Now we work with the image returned and save it as a PNG  using ImageDraw
-		# package.
-
+		self.imagesCounter = self.imagesCounter + 1
 		# Get the image size and pixel array.
 		imageWidth = naoImage[0]
 		imageHeight = naoImage[1]
@@ -49,3 +49,4 @@ class PepperImageProvider:
 
 	def disconnect(self):
 		self.camProxy.unsubscribe(self.videoClient)
+		self.connected = False

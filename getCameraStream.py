@@ -3,7 +3,17 @@
 import sys
 import numpy
 import cv2
+import time
 from pepperImageProvider import PepperImageProvider
+import threading
+
+def printFps(imageProvider):
+	if imageProvider.connected:
+		threading.Timer(1, printFps, args=[imageProvider]).start()	
+		print "FPS:" + str(imageProvider.getImagesCounter())
+		imageProvider.reset()
+
+
 
 if __name__ == '__main__':
 	IP = "nao.local"  # Replace here with your NaoQi's IP address.
@@ -23,8 +33,14 @@ if __name__ == '__main__':
 	else:
 		print("Usage: getCameraStream <Pepper_IP> OPT:<FPS>")
 		exit(-1)
+
+	
+
+	# do something else, such as
 	imageProvider = PepperImageProvider(IP, PORT, FPS)
 	imageProvider.connect()
+	printFps(imageProvider)
+
 	while(True):
 		img = imageProvider.getCvImage()
 		cv2.imshow("Image", img)
@@ -32,5 +48,5 @@ if __name__ == '__main__':
 		if k==27:    # Esc key to stop
 			cv2.destroyAllWindows()
 			break
-
 	imageProvider.disconnect()
+ 
