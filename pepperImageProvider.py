@@ -6,6 +6,8 @@ import Image
 from naoqi import ALProxy
 import numpy
 import cv2
+import qi
+import vision_definitions
 
 class PepperImageProvider:
 
@@ -24,9 +26,9 @@ class PepperImageProvider:
 
 	def connect(self):
 		self.camProxy = ALProxy("ALVideoDevice", self.IP, self.PORT)
-		resolution = 2    # VGA
+		resolution = 2   # VGA
 		colorSpace = 11   # RGB
-		self.videoClient = self.camProxy.subscribe("python_client", resolution, colorSpace, self.FPS)
+		self.videoClient = self.camProxy.subscribe("python_GVM", resolution, colorSpace, self.FPS)
 		self.connected = True
 
 	def getCvImage(self):
