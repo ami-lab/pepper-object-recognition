@@ -131,3 +131,5 @@ class FaceRecognizerCV:
 
         print(str(nbr_predicted) + " " + str(conf))
         return self.getNameForClass(nbr_predicted)
+
+

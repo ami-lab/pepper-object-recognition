@@ -61,8 +61,14 @@ def async(decorated):
     return send
 
 topic_ids = []
+should_move = True
+
+said = False
+
+
 
 class Main:
+
     def __init__(self):
         try:
             connection_url = "tcp://" + ip + ":" + str(port)
@@ -79,13 +85,13 @@ class Main:
         self.subscribers_list = []
         self.memory = self.session.service("ALMemory")
         self.people_detection = self.session.service("ALPeoplePerception")
-        self.people_detection.subscribe("Main")
+
+        self.people_detection.subscribe("PeopleDetection")
         self.connect_callback("PeoplePerception/PeopleDetected", self.on_people_detected)
         self.connect_callback("PeoplePerception/PopulationUpdated", self.on_people_updated)
+        self.counter = 0
         self.speech_recognition = self.session.service("ALSpeechRecognition")
-        self.speech_recognition.subscribe("Main")
-        self.should_move = True
-        self.said = False
+        self.speech_recognition.subscribe("SpeechRecognition")
 
         self.peoplePositions = {}
         self.speech_recognition_topics = (
@@ -154,28 +160,33 @@ class Main:
                        "coordRobotFrame": self.memory.getData("PeoplePerception/Person/" + str(person[0]) + "/PositionInRobotFrame")
                       }
         return person_info
+
     def on_people_updated(self, people):
         if people == None or people == [] or len(people) == 0:
-            self.should_move = True
+            should_move = True
             return
 
     def on_people_detected(self, people):
-        print("Detected People....")
-        self.should_move = False
-        if people == [] or len(people) == 0 or len(people[1]) == 0:
-            self.should_move = True
+        if self.searchedPerson == None:
+            print("No person to search!?")
             return
 
-        if self.searchedPerson == None:
+        self.counter = self.counter + 1
+        print("Detected People...." + str(self.counter))
+        should_move = False
+        if people == [] or len(people) == 0 or len(people[1]) == 0:
+            should_move = True
             return
+
+
 
         faces = faceDetector.detect(self.image)
         print("Found " + str(len(faces)) + " faces")
 
         if len(faces) == 0:
-            #if(not self.said):
+            #if(not said):
                 #speechController.say("Please move towards me. I cannot see your face.")
-            self.said = True
+            said = True
         else:
             print("Looking for..." + self.searchedPerson)
             if(self.searchedPerson != None):
@@ -185,24 +196,27 @@ class Main:
                     name = faceRecognizer.recognize(croppedImage)
                     print("Recognized: " + name)
 
-                    speechController.say("I found " + name)
                     if(name == self.searchedPerson):
                         if(len(people[1]) >= 1):
                             postureController.stopExplore()
                             person_info = self.get_person_info(people[1][0])
                             self.searchedPerson = None
-                            speechController.say("Going to " + name)
-                            print(person_info['coordRobotFrame'])
+                            print("Going to " + str(person_info['coordRobotFrame']))
                             postureController.navigateTo(person_info['coordRobotFrame'][0], person_info['coordRobotFrame'][1])
+                            self.say("Reached Stephanie")
                         else:
                             print("Too many faces or people I don't really know, here!")
                     else:
-                        self.should_move = True
+                        should_move = True
 
     def updateImage(self):
         self.image = imageProvider.getCvImage()
         cv2.imshow("Image", self.image)
         cv2.waitKey(1)
+
+    def say(self, text):
+        pool = Pool(processes=1)  # Start a worker processes.
+        result = pool.apply_async(speechController.say(text), [], None)
 
     def matchFace(self, face, person_info):
         (x, y, w, h) = face
@@ -220,7 +234,7 @@ class Main:
     def findPerson(self, name):
         try:
             self.searchedPerson = name
-            self.should_move = True
+            should_move = True
             pool = Pool(processes=1)  # Start a worker processes.
             result = pool.apply_async(postureController.explore(),[] , None)
 
@@ -235,11 +249,11 @@ class Main:
     def findPerson(self, name):
         try:
             self.searchedPerson = name
-            self.should_move = True
+            should_move = True
             while (self.searchedPerson != None):
-                if (self.should_move):
+                if (should_move):
                     postureController.rotate(degrees)
-                    self.said = False
+                    said = False
         except KeyboardInterrupt:
             print("Script interrupted by user, shutting down.")
             imageProvider.disconnect()
